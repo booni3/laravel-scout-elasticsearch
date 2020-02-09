@@ -25,6 +25,15 @@ final class ElasticSearchEngine extends Engine
      */
     protected $elasticsearch;
 
+    /** @var string */
+    private $hitsIterator = null;
+
+    private $builder = null;
+
+    private $searchBody = null;
+
+    private $options = [];
+
     /**
      * Create a new engine instance.
      *
@@ -103,14 +112,29 @@ final class ElasticSearchEngine extends Engine
     }
 
     /**
+     * @param $value
+     */
+    public function useHitsIterator($value)
+    {
+        $this->hitsIterator = $value;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function map(BaseBuilder $builder, $results, $model)
     {
-        $hits = app()->makeWith(HitsIteratorAggregate::class,
-                    ['results' => $results,
+        if(is_null($this->hitsIterator)){
+            $hits = app()->makeWith(HitsIteratorAggregate::class,
+                ['results' => $results,
                     'callback' => $builder->queryCallback,
-                    ]);
+                ]);
+        } else {
+            $hits = app()->makeWith($this->hitsIterator,
+                ['results' => $results,
+                    'callback' => $builder->queryCallback,
+                ]);
+        }
 
         return new Collection($hits);
     }
@@ -123,6 +147,15 @@ final class ElasticSearchEngine extends Engine
         return $results['hits']['total']['value'];
     }
 
+    public function getSearchBody($options = [])
+    {
+        foreach($options as $key => $option){
+            $this->options[$key] = $option;
+        }
+
+        return SearchFactory::create($this->builder, $this->options);
+    }
+
     /**
      * @param BaseBuilder $builder
      * @param array $options
@@ -130,17 +163,22 @@ final class ElasticSearchEngine extends Engine
      */
     private function performSearch(BaseBuilder $builder, $options = [])
     {
-        $searchBody = SearchFactory::create($builder, $options);
         if ($builder->callback) {
             /** @var callable */
             $callback = $builder->callback;
 
+            $this->builder = $builder;
+            $this->options = $options;
+
             return call_user_func(
                 $callback,
                 $this->elasticsearch,
-                $searchBody
+                $this
             );
         }
+
+        $searchBody = SearchFactory::create($builder, $options);
+
         /** @var Searchable $model */
         $model = $builder->model;
         $indexName = $builder->index ?: $model->searchableAs();
