@@ -38,8 +38,8 @@ Don't forget to :star: the package if you like it. :pray:
 
 ## :warning: Requirements
 
-- PHP version >= 7.1.3
-- Laravel Framework version >= 5.6
+- PHP version >= 7.2.0
+- Laravel Framework version >= 6.0.0
 
 | Elasticsearch version | ElasticsearchDSL version    |
 | --------------------- | --------------------------- |
@@ -62,7 +62,7 @@ so feel free do it in your app service provider.
 But if you don't want to do it right now, 
 you can use `Matchish\ElasticSearchServiceProvider` from the package.  
 Register the provider, adding to `config/app.php`
-```
+```php
 'providers' => [
     // Other Service Providers
 
@@ -105,7 +105,7 @@ And for default settings
 To speed up import you can eager load relations on import using global scopes.
 
 You should configure `ImportSourceFactory` in your service provider(`register` method)
-```
+```php
 use Matchish\ScoutElasticSearch\Searchable\ImportSourceFactory;
 ...
 public function register(): void
@@ -113,7 +113,7 @@ public function register(): void
 $this->app->bind(ImportSourceFactory::class, MyImportSourceFactory::class);
 ``` 
 Here is an example of `MyImportSourceFactory`
-```
+```php
 namespace Matchish\ScoutElasticSearch\Searchable;
 
 final class MyImportSourceFactory implements ImportSourceFactory
